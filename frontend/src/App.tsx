@@ -344,6 +344,27 @@ export function App() {
     );
   }
 
+  const handleDeleteScan = async (scanId: number) => {
+    if (!window.confirm('Tem certeza que deseja excluir este escaneamento 3D?')) {
+      return;
+    }
+    try {
+      await scanService.delete(scanId);
+      if (currentPatient) {
+        const ptScans = await scanService.getByPatient(currentPatient.id);
+        setScans(ptScans);
+      } else {
+        setScans((prev) => prev.filter((s) => s.id !== scanId));
+      }
+      if (selectedScanId === scanId) {
+        setSelectedScanId(null);
+      }
+    } catch (err) {
+      console.error('Erro ao excluir escaneamento 3D:', err);
+      alert('Erro ao excluir o escaneamento 3D.');
+    }
+  };
+
   const selectedScan = scans.find((s) => s.id === selectedScanId);
   const selectedComponent = project.components.find((c) => c.id === selectedComponentId) || null;
 
@@ -372,6 +393,7 @@ export function App() {
           selectedScanId={selectedScanId}
           selectedComponentId={selectedComponentId}
           onSelectScan={setSelectedScanId}
+          onDeleteScan={handleDeleteScan}
           onUploadScanClick={() => setIsUploadModalOpen(true)}
           onDirectFileUpload={handleUploadScan}
           onSelectComponent={setSelectedComponentId}

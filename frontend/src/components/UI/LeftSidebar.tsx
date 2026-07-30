@@ -23,6 +23,7 @@ interface LeftSidebarProps {
   selectedScanId: number | null;
   selectedComponentId: string | null;
   onSelectScan: (scanId: number | null) => void;
+  onDeleteScan?: (scanId: number) => void;
   onUploadScanClick: () => void;
   onDirectFileUpload?: (file: File) => void;
   onSelectComponent: (id: string | null) => void;
@@ -37,6 +38,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   selectedScanId,
   selectedComponentId,
   onSelectScan,
+  onDeleteScan,
   onUploadScanClick,
   onDirectFileUpload,
   onSelectComponent,
@@ -92,18 +94,31 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           </button>
         </div>
 
-        <select
-          value={selectedScanId || ''}
-          onChange={(e) => onSelectScan(e.target.value ? Number(e.target.value) : null)}
-          className="w-full bg-slate-950/80 text-xs text-slate-200 p-2.5 rounded-lg border border-slate-700/80 outline-none cursor-pointer focus:border-cyan-500"
-        >
-          <option value="">Pé Anatômico Sintético (Modelo Padrão)</option>
-          {scans.map((s) => (
-            <option key={s.id} value={s.id}>
-              Scan #{s.id} ({s.file_format.toUpperCase()}) - {new Date(s.upload_date).toLocaleDateString()}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2 w-full min-w-0">
+          <select
+            value={selectedScanId || ''}
+            onChange={(e) => onSelectScan(e.target.value ? Number(e.target.value) : null)}
+            className="flex-1 min-w-0 bg-slate-950/80 text-xs text-slate-200 p-2.5 rounded-lg border border-slate-700/80 outline-none cursor-pointer focus:border-cyan-500 truncate"
+          >
+            <option value="">Pé Anatômico Sintético (Modelo Padrão)</option>
+            {scans.map((s) => (
+              <option key={s.id} value={s.id}>
+                Scan #{s.id} ({s.file_format.toUpperCase()}) - {new Date(s.upload_date).toLocaleDateString()}
+              </option>
+            ))}
+          </select>
+
+          {selectedScanId && onDeleteScan && (
+            <button
+              type="button"
+              onClick={() => onDeleteScan(selectedScanId)}
+              title="Excluir este escaneamento 3D"
+              className="p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 rounded-lg border border-rose-500/30 transition-all cursor-pointer shadow-sm active:scale-95 flex items-center justify-center flex-shrink-0"
+            >
+              <Trash2 className="w-4 h-4 text-rose-400" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 2. Biblioteca de Componentes Ortopédicos */}

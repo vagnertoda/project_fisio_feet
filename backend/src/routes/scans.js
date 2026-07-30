@@ -88,4 +88,36 @@ router.get('/patient/:patientId', async (req, res) => {
   }
 });
 
+// Excluir escaneamento 3D (arquivo do disco + registro no banco)
+router.delete('/:id', async (req, res) => {
+  try {
+    const scanId = req.params.id;
+    const scans = await query('SELECT * FROM foot_scans WHERE id = ?', [scanId]);
+    if (!scans.rows || scans.rows.length === 0) {
+      return res.status(404).json({ error: 'Escaneamento 3D não encontrado.' });
+    }
+
+    const scan = scans.rows[0];
+
+    // Remover o arquivo físico do disco
+    if (scan.file_path) {
+      const relativePath = scan.file_path.replace(/^\//, '');
+      const fullPath = path.join(__dirname, '..', '..', relativePath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+        console.log(`🗑️ Arquivo de escaneamento removido do disco: ${fullPath}`);
+      }
+    }
+
+    // Remover registro do banco de dados
+    await query('DELETE FROM foot_scans WHERE id = ?', [scanId]);
+
+    console.log(`✅ Escaneamento #${scanId} removido do banco de dados.`);
+    res.json({ message: 'Escaneamento 3D removido com sucesso.', id: scanId });
+  } catch (err) {
+    console.error('Erro ao deletar escaneamento 3D:', err.message);
+    res.status(500).json({ error: 'Erro ao deletar o escaneamento 3D.' });
+  }
+});
+
 module.exports = router;

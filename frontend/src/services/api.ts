@@ -82,6 +82,10 @@ export const scanService = {
   getByPatient: async (patientId: number): Promise<FootScan[]> => {
     const res = await api.get(`/scans/patient/${patientId}`);
     return res.data;
+  },
+  delete: async (id: number) => {
+    const res = await api.delete(`/scans/${id}`);
+    return res.data;
   }
 };
 
