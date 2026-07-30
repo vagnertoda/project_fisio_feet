@@ -26,6 +26,7 @@ interface InsoleEditor3DProps {
   viewpoint: ViewpointPreset;
   showFoot: boolean;
   showGrid?: boolean;
+  isRotatedX?: boolean;
   onExportReady?: (stlBlob: Blob) => void;
 }
 
@@ -39,6 +40,7 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
   viewpoint,
   showFoot,
   showGrid = true,
+  isRotatedX = false,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -58,7 +60,7 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
 
-  // Algoritmo Anatômico Avançado de Auto-Orientação e Alinhamento Sincronizado do Pé (Candidato #49 - print2 exato)
+  // Algoritmo Anatômico Estrito de Auto-Orientação e Espelhamento (scale.x *= -1) com Recálculo de Normais
   const normalizeAndCenterModel = useCallback((object: THREE.Object3D) => {
     object.rotation.set(0, 0, 0);
     object.scale.set(1, 1, 1);
@@ -71,8 +73,7 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
 
     if (size.x === 0 && size.y === 0 && size.z === 0) return object;
 
-    // Auto-Orientação Anatômica Idêntica à Imagem print2:
-    // Tornozelo/Canela para CIMA (+Y), Sola para BAIXO (-Y), Dedos para DIREITA (+Z), Calcanhar para ESQUERDA (-Z)
+    // Alinhamento de eixos: Z = Comprimento, Y = Altura, X = Largura
     const dims = [
       { axis: 'x', val: size.x },
       { axis: 'y', val: size.y },
@@ -91,26 +92,31 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
     box.setFromObject(object);
     box.getSize(size);
 
-    // Escalar para que o comprimento no Eixo Z seja exatamente 260mm
+    // Preservar escala e aplicar espelhamento no Eixo X (scale.x *= -1)
     const targetLength = 260.0;
     if (size.z > 0) {
       let scaleFactor = targetLength / size.z;
-      // Alinhamento Sincronizado de Lado:
-      // Pé Direito (right): Hallux e Arco Medial no lado ESQUERDO da tela (+scaleX)
-      // Pé Esquerdo (left): Hallux e Arco Medial no lado DIREITO da tela (-scaleX)
+      // Aplica espelhamento no Eixo X para Pé Direito / Esquerdo
       const isRight = project.foot_side === 'right';
-      const scaleX = isRight ? Math.abs(scaleFactor) : -Math.abs(scaleFactor);
+      const scaleX = isRight ? -Math.abs(scaleFactor) : Math.abs(scaleFactor);
       object.scale.set(scaleX, scaleFactor, scaleFactor);
     }
 
     object.updateMatrixWorld(true);
+
+    // Recalcular as normais da malha para manter iluminação 3D perfeita pós-espelhamento
+    object.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+        (child as THREE.Mesh).geometry.computeVertexNormals();
+      }
+    });
 
     box.setFromObject(object);
     box.getSize(size);
     const center = new THREE.Vector3();
     box.getCenter(center);
 
-    // Centralizar em X=0, Z=0 e alinhar base Y (min.y = sola) exatamente sobre a palmilha
+    // Preservar pivô e alinhar a base da sola (box.min.y) no topo da palmilha
     object.position.x = -center.x;
     object.position.z = -center.z;
     object.position.y = -box.min.y + project.base_thickness + 1.0;
@@ -227,6 +233,17 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
     if (gridHelperRef.current) gridHelperRef.current.visible = showGrid;
     if (axesHelperRef.current) axesHelperRef.current.visible = showGrid;
   }, [showGrid]);
+
+  // Aplicar Rotação de 180° no Eixo X na Palmilha e Componentes
+  useEffect(() => {
+    const rotX = isRotatedX ? Math.PI : 0;
+    if (baseInsoleMeshRef.current) {
+      baseInsoleMeshRef.current.rotation.x = rotX;
+    }
+    if (componentsGroupRef.current) {
+      componentsGroupRef.current.rotation.x = rotX;
+    }
+  }, [isRotatedX]);
 
   // 2. Carregar Modelo do Pé (Escaneamento 3D ou Sintético)
   useEffect(() => {
@@ -346,11 +363,12 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
 
     const baseMesh = new THREE.Mesh(insoleGeo, insoleMat);
     baseMesh.position.set(0, 0, 0);
+    baseMesh.rotation.x = isRotatedX ? Math.PI : 0;
     baseMesh.receiveShadow = true;
     baseMesh.castShadow = true;
     scene.add(baseMesh);
     baseInsoleMeshRef.current = baseMesh;
-  }, [project.base_thickness, project.arch_height, project.arch_width, project.foot_side, renderMode]);
+  }, [project.base_thickness, project.arch_height, project.arch_width, project.foot_side, renderMode, isRotatedX]);
 
   // 4. Atualizar Componentes Ortopédicos na Cena
   useEffect(() => {
