@@ -76,6 +76,7 @@ export function App() {
   const [viewpoint, setViewpoint] = useState<ViewpointPreset>('perspective');
   const [showFoot, setShowFoot] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
+  const [isRotatedY, setIsRotatedY] = useState(false);
 
   // Estados dos Modais
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
@@ -415,6 +416,8 @@ export function App() {
             onToggleShowFoot={() => setShowFoot((prev) => !prev)}
             showGrid={showGrid}
             onToggleShowGrid={() => setShowGrid((prev) => !prev)}
+            isRotatedY={isRotatedY}
+            onToggleRotateInsoleY={() => setIsRotatedY((prev) => !prev)}
           />
 
           <InsoleEditor3D
@@ -427,6 +430,7 @@ export function App() {
             viewpoint={viewpoint}
             showFoot={showFoot}
             showGrid={showGrid}
+            isRotatedY={isRotatedY}
           />
         </main>
 

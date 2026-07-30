@@ -26,7 +26,7 @@ interface InsoleEditor3DProps {
   viewpoint: ViewpointPreset;
   showFoot: boolean;
   showGrid?: boolean;
-  isRotatedX?: boolean;
+  isRotatedY?: boolean;
   onExportReady?: (stlBlob: Blob) => void;
 }
 
@@ -40,7 +40,7 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
   viewpoint,
   showFoot,
   showGrid = true,
-  isRotatedX = false,
+  isRotatedY = false,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -234,16 +234,16 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
     if (axesHelperRef.current) axesHelperRef.current.visible = showGrid;
   }, [showGrid]);
 
-  // Aplicar Rotação de 180° no Eixo X na Palmilha e Componentes
+  // Aplicar Rotação de 180° no Eixo Y na Palmilha e Componentes
   useEffect(() => {
-    const rotX = isRotatedX ? Math.PI : 0;
+    const rotY = isRotatedY ? Math.PI : 0;
     if (baseInsoleMeshRef.current) {
-      baseInsoleMeshRef.current.rotation.x = rotX;
+      baseInsoleMeshRef.current.rotation.y = rotY;
     }
     if (componentsGroupRef.current) {
-      componentsGroupRef.current.rotation.x = rotX;
+      componentsGroupRef.current.rotation.y = rotY;
     }
-  }, [isRotatedX]);
+  }, [isRotatedY]);
 
   // 2. Carregar Modelo do Pé (Escaneamento 3D ou Sintético)
   useEffect(() => {
@@ -363,12 +363,12 @@ export const InsoleEditor3D: React.FC<InsoleEditor3DProps> = ({
 
     const baseMesh = new THREE.Mesh(insoleGeo, insoleMat);
     baseMesh.position.set(0, 0, 0);
-    baseMesh.rotation.x = isRotatedX ? Math.PI : 0;
+    baseMesh.rotation.y = isRotatedY ? Math.PI : 0;
     baseMesh.receiveShadow = true;
     baseMesh.castShadow = true;
     scene.add(baseMesh);
     baseInsoleMeshRef.current = baseMesh;
-  }, [project.base_thickness, project.arch_height, project.arch_width, project.foot_side, renderMode, isRotatedX]);
+  }, [project.base_thickness, project.arch_height, project.arch_width, project.foot_side, renderMode, isRotatedY]);
 
   // 4. Atualizar Componentes Ortopédicos na Cena
   useEffect(() => {
